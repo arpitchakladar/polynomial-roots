@@ -77,8 +77,12 @@ class Polynomial:
 	def substract(self, p):
 		return self.add(p.negate())
 
-	def multiply(self, p: int): # only monomials
-		return Polynomial([p * i for i in self.coefficients])
+	def multiply(self, p): # only monomials
+		res = Polynomial([0])
+		for i in range(self.get_degree() + 1):
+			for j in range(p.get_degree() + 1):
+				res = res.add(Polynomial([self.get_coefficient(i) * p.get_coefficient(j)])._raise_to(i + j))
+		return res
 
 	def divide(self, p):
 		if self.get_degree() > p.get_degree():
@@ -86,7 +90,7 @@ class Polynomial:
 			remainder = copy(self)
 			for i in range(self.get_degree(), p.get_degree() - 1, -1):
 				coefficient = remainder.get_coefficient(i) / p.get_coefficient(p.get_degree())
-				k = p.multiply(coefficient)._raise_to(i)
+				k = p.multiply(Polynomial([coefficient]))._raise_to(i)
 				remainder = remainder.substract(k)
 				coefficients.append(coefficient)
 			coefficients.reverse()
