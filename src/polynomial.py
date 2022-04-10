@@ -3,10 +3,10 @@ from copy import copy
 import typing
 
 def get_super(x):
-    normal = "0123456789"
-    super_s = "⁰¹²³⁴⁵⁶⁷⁸⁹"
-    res = x.maketrans(''.join(normal), ''.join(super_s))
-    return x.translate(res)
+	normal = "0123456789"
+	super_s = "⁰¹²³⁴⁵⁶⁷⁸⁹"
+	res = x.maketrans(''.join(normal), ''.join(super_s))
+	return x.translate(res)
 
 class Polynomial:
 	coefficients: list[float]
