@@ -1,6 +1,6 @@
 import math
 from copy import copy
-import typing
+from typing import Type
 
 def get_super(x):
 	normal = "0123456789"
@@ -12,36 +12,39 @@ class Polynomial:
 	coefficients: list[float]
 
 	def __init__(self, coefficients: list[float]):
+		if len(coefficients) < 1:
+			raise Exception("A polynomial must have atleast 1 term.")
 		self.coefficients = coefficients
 
-	def __str__(self):
-		res = str(abs(self.get_coefficient(0)))
-		if self.get_degree() > 0:
-			if self.get_coefficient(0) > 0:
-				res = "+ " + res
-			else:
+	def __str__(self) -> str:
+		res = str(abs(self[0]))
+		if self.degree > 0:
+			if self[0] < 0:
 				res = "- " + res
+			else:
+				res = "+ " + res
+		elif self[0] < 0:
+			res = "-" + res
 
 		for i in range(1, len(self.coefficients)):
-			if self.get_coefficient(i) != 0:
-				p = ""
+			if self[i] != 0:
+				degree = ""
 				if i > 1:
-					p = get_super(str(i))
-				c = ""
-				if self.get_coefficient(i) != 1:
-					c = str(abs(self.get_coefficient(i)))
-				s = ""
-				if self.get_coefficient(i) < 0:
-					s = "- "
-				elif i != self.get_degree():
-					s = "+ "
-				res = f"{s}{c}x{p} " + res
+					degree = get_super(str(i))
+				abs_coefficient = abs(self[i])
+				coefficient = str(abs_coefficient) if abs_coefficient != 1 else ""
+				sign = ""
+				if i != self.degree:
+					sign = "- " if self[i] < 0 else "+ "
+				elif self[i] < 0:
+					sign = "-"
+				res = f"{sign}{coefficient}x{degree} " + res
 		return res
 
 	def _get_greator_and_smallor(self, p):
 		g = None
 		l = None
-		if p.get_degree() > self.get_degree():
+		if p.degree > self.degree:
 			g = p
 			l = self
 		else:
@@ -50,70 +53,77 @@ class Polynomial:
 		return (g, l)
 
 	def _raise_to(self, degree: int):
-		return Polynomial([0 for i in range(0, degree - self.get_degree())] + self.coefficients)
+		return Polynomial([0 for i in range(0, degree - self.degree)] + self.coefficients)
 
-	def get_degree(self):
+	@property
+	def degree(self):
 		return len(self.coefficients) - 1
 
-	def get_coefficient(self, term: int):
-		return self.coefficients[term]
+	def __getitem__(self, x: int):
+		return self.coefficients[x]
 
-	def negate(self):
-		p = copy(self)
-		for i in range(len(self.coefficients)):
-			p.coefficients[i] = - self.get_coefficient(i)
-		return p
-
-	def add(self, p):
-		(g, l) = self._get_greator_and_smallor(p)
-		coefficients = []
-		for i in range(g.get_degree() + 1):
-			if i <= l.get_degree():
-				coefficients.append(g.get_coefficient(i) + l.get_coefficient(i))
-			else:
-				coefficients.append(g.get_coefficient(i))
-		return Polynomial(coefficients)
-
-	def substract(self, p):
-		return self.add(p.negate())
-
-	def multiply(self, p): # only monomials
-		res = Polynomial([0])
-		for i in range(self.get_degree() + 1):
-			for j in range(p.get_degree() + 1):
-				res = res.add(Polynomial([self.get_coefficient(i) * p.get_coefficient(j)])._raise_to(i + j))
-		return res
-
-	def divide(self, p):
-		if self.get_degree() > p.get_degree():
-			coefficients = []
-			remainder = copy(self)
-			for i in range(self.get_degree(), p.get_degree() - 1, -1):
-				coefficient = remainder.get_coefficient(i) / p.get_coefficient(p.get_degree())
-				k = p.multiply(Polynomial([coefficient]))._raise_to(i)
-				remainder = remainder.substract(k)
-				coefficients.append(coefficient)
-			coefficients.reverse()
-			return Polynomial(coefficients)
-
-	def eval(self, x) -> float:
-		res = self.get_coefficient(0)
+	def __call__(self, x) -> float:
+		res = self[0]
 		for i in range(1, len(self.coefficients)):
-			res += math.pow(x, i) * self.get_coefficient(i)
+			res += math.pow(x, i) * self[i]
 		return res
 
+	@property
 	def derivitive(self):
 		coefficients = []
 		for i in range(1, len(self.coefficients)):
-			coefficients.append(self.get_coefficient(i) * i)
+			coefficients.append(self[i] * i)
 		return Polynomial(coefficients)
 
-	def root(self, acc = 10000) -> float:
-		d = self.derivitive()
-		res = self.get_coefficient(0)
-		for i in range(acc):
-			v = self.eval(res)
-			m = d.eval(res)
+	@property
+	def root(self, accuracy = 10000) -> float:
+		d = self.derivitive
+		res = self[0]
+		for i in range(accuracy):
+			v = self(res)
+			m = d(res)
 			c = v - m * res
 			res = - (c / m)
+		return math.floor(res * accuracy) / accuracy
+
+# Operations
+	def __neg__(self):
+		res = copy(self)
+		for i in range(len(self.coefficients)):
+			res.coefficients[i] = - self[i]
 		return res
+
+	def __add__(self, other):
+		(g, l) = self._get_greator_and_smallor(other)
+		coefficients = []
+		for i in range(g.degree + 1):
+			if i <= l.degree:
+				coefficients.append(g[i] + l[i])
+			else:
+				coefficients.append(g[i])
+		return Polynomial(coefficients)
+
+	def __sub__(self, other):
+		return self + (-other)
+
+	def __mul__(self, other):
+		res = Polynomial([0])
+		for i in range(self.degree + 1):
+			for j in range(other.degree + 1):
+				res = res + Polynomial([self[i] * other[j]])._raise_to(i + j)
+		return res
+
+	def __div__(self, other):
+		if self.degree > other.degree:
+			coefficients = []
+			remainder = copy(self)
+			for i in range(self.degree, other.degree - 1, -1):
+				coefficient = remainder[i] / other[other.degree]
+				remainder = remainder - (other * Polynomial([coefficient])._raise_to(i - other.degree))
+				coefficients.append(coefficient)
+			coefficients.reverse()
+			return Polynomial(coefficients)
+		return Polynomial([0])
+
+	def __truediv__(self, other):
+		return self.__div__(other)

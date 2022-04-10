@@ -1,15 +1,10 @@
 from polynomial import Polynomial
 
 def main() -> None:
-	p = Polynomial([4, 5, 1])
-	p = p.substract(Polynomial([0, 1]))
-	print(p)
-	p2 = p.divide(Polynomial([2, 1]))
-	print(p2)
-	print(p2.multiply(p))
-	print(p.eval(69))
-	print(p.root())
-	print(p.derivitive())
+	p = Polynomial([-16, -30, 3, 2, 12, 1])
+	p2 = p / Polynomial([2, 1, 1])
+	print(p2 * Polynomial([2, 1, 1]))
+	print(p * Polynomial([2, 1]))
 
 if __name__ == "__main__":
 	main()
