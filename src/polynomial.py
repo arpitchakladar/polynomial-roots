@@ -1,12 +1,7 @@
 import math
 from copy import copy
 from typing import Type
-
-def get_super(x):
-	normal = "0123456789"
-	super_s = "⁰¹²³⁴⁵⁶⁷⁸⁹"
-	res = x.maketrans(''.join(normal), ''.join(super_s))
-	return x.translate(res)
+import utils
 
 class Polynomial:
 	coefficients: list[float]
@@ -21,6 +16,8 @@ class Polynomial:
 		if self.degree > 0:
 			if self[0] < 0:
 				res = "- " + res
+			elif self[0] == 0:
+				res = ""
 			else:
 				res = "+ " + res
 		elif self[0] < 0:
@@ -29,15 +26,19 @@ class Polynomial:
 		for i in range(1, len(self.coefficients)):
 			if self[i] != 0:
 				degree = ""
+
 				if i > 1:
-					degree = get_super(str(i))
+					degree = utils.get_super(i)
+
 				abs_coefficient = abs(self[i])
 				coefficient = str(abs_coefficient) if abs_coefficient != 1 else ""
 				sign = ""
+
 				if i != self.degree:
 					sign = "- " if self[i] < 0 else "+ "
 				elif self[i] < 0:
 					sign = "-"
+
 				res = f"{sign}{coefficient}x{degree} " + res
 		return res
 
@@ -54,6 +55,18 @@ class Polynomial:
 
 	def _raise_to(self, degree: int):
 		return Polynomial([0 for i in range(0, degree - self.degree)] + self.coefficients)
+
+	def _div(self, other):
+		if self.degree > other.degree:
+			coefficients = []
+			remainder = copy(self)
+			for i in range(self.degree, other.degree - 1, -1):
+				coefficient = remainder[i] / other[other.degree]
+				remainder = remainder - (other * Polynomial([coefficient]))._raise_to(i)
+				coefficients.append(coefficient)
+			coefficients.reverse()
+			return (Polynomial(coefficients), remainder)
+		raise Exception("The left operand must be greater than the right operand.")
 
 	@property
 	def degree(self):
@@ -76,15 +89,26 @@ class Polynomial:
 		return Polynomial(coefficients)
 
 	@property
-	def root(self, accuracy = 10000) -> float:
-		d = self.derivitive
-		res = self[0]
-		for i in range(accuracy):
-			v = self(res)
-			m = d(res)
-			c = v - m * res
-			res = - (c / m)
-		return math.floor(res * accuracy) / accuracy
+	def roots(self, accuracy = 10000) -> list[float]:
+		p = copy(self)
+		roots = []
+		while p.degree > 0:
+			d = p.derivitive
+			res = p[0]
+			for i in range(accuracy):
+				v = p(res)
+				m = d(res)
+				c = v - m * res
+				res = - (c / m)
+			if (-0.1 < p(res) < 0.1):
+				roots.append(round(res * accuracy) / accuracy)
+
+			try:
+				p /= Polynomial([-res, 1])
+			except:
+				break
+
+		return roots
 
 # Operations
 	def __neg__(self):
@@ -114,16 +138,12 @@ class Polynomial:
 		return res
 
 	def __div__(self, other):
-		if self.degree > other.degree:
-			coefficients = []
-			remainder = copy(self)
-			for i in range(self.degree, other.degree - 1, -1):
-				coefficient = remainder[i] / other[other.degree]
-				remainder = remainder - (other * Polynomial([coefficient])._raise_to(i - other.degree))
-				coefficients.append(coefficient)
-			coefficients.reverse()
-			return Polynomial(coefficients)
-		return Polynomial([0])
+		(quotient, _) = self._div(other)
+		return quotient
+
+	def __mod__(self, other):
+		(_, remainder) = self._div(other)
+		return remainder
 
 	def __truediv__(self, other):
 		return self.__div__(other)
