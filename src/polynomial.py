@@ -108,7 +108,7 @@ class Polynomial:
 			except:
 				break
 
-		return roots
+		return list(dict.fromkeys(roots))
 
 # Operations
 	def __neg__(self):
