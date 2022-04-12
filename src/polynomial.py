@@ -54,7 +54,7 @@ class Polynomial:
 		return (g, l)
 
 	def _raise_to(self, degree: int):
-		return Polynomial([0 for i in range(0, degree - self.degree)] + self.coefficients)
+		return Polynomial(list(range(degree - self.degree)) + self.coefficients)
 
 	def _div(self, other):
 		if self.degree > other.degree:
