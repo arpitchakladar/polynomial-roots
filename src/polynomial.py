@@ -100,7 +100,7 @@ class Polynomial:
 				m = d(res)
 				c = v - m * res
 				res = - (c / m)
-			if (-0.1 < p(res) < 0.1):
+			if (-0.1 < self(res) < 0.1):
 				roots.append(round(res * accuracy) / accuracy)
 
 			try:
